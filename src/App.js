@@ -1,31 +1,39 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import MoviesList from './components/MoviesList';
 import './App.css';
 
 function App() {
-  const dummyMovies = [
-    {
-      id: 1,
-      title: 'Some Dummy Movie',
-      openingText: 'This is the opening text of the movie',
-      releaseDate: '2021-05-18',
-    },
-    {
-      id: 2,
-      title: 'Some Dummy Movie 2',
-      openingText: 'This is the second opening text of the movie',
-      releaseDate: '2021-05-19',
-    },
-  ];
+  const [movies, setMovies] = useState([]);
+
+  // Making the fetch inside of App.js as doing it inside MoviesList would make that component non-reusable, it's good practice to have states in the parent component rather than child components
+  function fetchMovieHandler() {
+    fetch('https://swapi.dev/api/films')
+      .then((response) => {
+        return response.json(); //translate json response body to js object
+      })
+      .then((data) => {
+        // transformedMovies will be an array of objects
+        const transformedMovies = data.results.map((movieData) => {
+          return {
+            id: movieData.episode_id,
+            title: movieData.title,
+            openingText: movieData.opening_crawl,
+            releaseDate: movieData.releaseDate,
+          };
+        });
+
+        setMovies(transformedMovies);
+      });
+  }
 
   return (
     <React.Fragment>
       <section>
-        <button>Fetch Movies</button>
+        <button onClick={fetchMovieHandler}>Fetch Movies</button>
       </section>
       <section>
-        <MoviesList movies={dummyMovies} />
+        <MoviesList movies={movies} />
       </section>
     </React.Fragment>
   );
