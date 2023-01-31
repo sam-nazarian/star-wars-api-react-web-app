@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 
 import MoviesList from './components/MoviesList';
+import AddMovie from './components/AddMovie';
 import './App.css';
 
 function App() {
@@ -8,82 +9,67 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Making the fetch inside of App.js as doing it inside MoviesList would make that component non-reusable, it's good practice to have states in the parent component rather than child components
-  const fetchMovieHandler = useCallback(async function () {
+  const fetchMoviesHandler = useCallback(async () => {
     setIsLoading(true);
-    setError(null); //clear prev errors
-
+    setError(null);
     try {
-      const response = await fetch('https://swapi.dev/api/films/');
+      // movies.json will create a new node on the database
+      // firebase is a dynamic rest api
+      const response = await fetch('https://react-http-4f104-default-rtdb.firebaseio.com/movies.json');
       if (!response.ok) {
         throw new Error('Something went wrong!');
       }
 
-      const data = await response.json(); //translate json response body to js object
+      const data = await response.json();
+
       const transformedMovies = data.results.map((movieData) => {
         return {
           id: movieData.episode_id,
           title: movieData.title,
           openingText: movieData.opening_crawl,
-          releaseDate: movieData.releaseDate,
+          releaseDate: movieData.release_date,
         };
       });
-
       setMovies(transformedMovies);
-    } catch (err) {
-      setError(err.message);
+    } catch (error) {
+      setError(error.message);
     }
-    setIsLoading(false); //if successful or err, no longer loading
+    setIsLoading(false);
   }, []);
 
-  // fetchMovieHandler has side-effects (http requests) as it is from outside of react
-  // sideeffects without useEffect can cause infinite render loop, as setState would re-render the page every time
   useEffect(() => {
-    fetchMovieHandler();
-  }, [fetchMovieHandler]);
+    fetchMoviesHandler();
+  }, [fetchMoviesHandler]);
+
+  function addMovieHandler(movie) {
+    console.log(movie);
+  }
 
   let content = <p>Found no movies.</p>;
-  // must have states in the if statements to ensure that the statement would re-run
-  if (movies.length > 0) content = <MoviesList movies={movies} />;
-  if (error) content = <p>{error}</p>;
-  if (isLoading) content = <p>Loading...</p>;
+
+  if (movies.length > 0) {
+    content = <MoviesList movies={movies} />;
+  }
+
+  if (error) {
+    content = <p>{error}</p>;
+  }
+
+  if (isLoading) {
+    content = <p>Loading...</p>;
+  }
 
   return (
     <React.Fragment>
       <section>
-        <button onClick={fetchMovieHandler}>Fetch Movies</button>
+        <AddMovie onAddMovie={addMovieHandler} />
       </section>
       <section>
-        {content}
-        {/* every request will have these states "loading", "erros", "recieved data", "empty data" */}
-        {/* {!isLoading && movies.length > 0 && <MoviesList movies={movies} />}
-        {!isLoading && movies.length === 0 && !error && <p>Found no movies.</p>}
-        {!isLoading && error && <p>{error}</p>}
-        {isLoading && <p>Loading...</p>} */}
+        <button onClick={fetchMoviesHandler}>Fetch Movies</button>
       </section>
+      <section>{content}</section>
     </React.Fragment>
   );
 }
 
 export default App;
-
-/*
-    //CODE IN fetchMovieHandler() USING THEN, INSTEAD OF ASYNC AWAIT
-    fetch('https://swapi.dev/api/films')
-      .then((response) => {
-        return response.json(); //translate json response body to js object
-      })
-      .then((data) => {
-        // transformedMovies will be an array of objects
-        const transformedMovies = data.results.map((movieData) => {
-          return {
-            id: movieData.episode_id,
-            title: movieData.title,
-            openingText: movieData.opening_crawl,
-            releaseDate: movieData.releaseDate,
-          };
-        });
-
-        setMovies(transformedMovies);
-      });
-      */
