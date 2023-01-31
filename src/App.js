@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 import MoviesList from './components/MoviesList';
 import './App.css';
@@ -9,7 +9,7 @@ function App() {
   const [error, setError] = useState(null);
 
   // Making the fetch inside of App.js as doing it inside MoviesList would make that component non-reusable, it's good practice to have states in the parent component rather than child components
-  async function fetchMovieHandler() {
+  const fetchMovieHandler = useCallback(async function () {
     setIsLoading(true);
     setError(null); //clear prev errors
 
@@ -34,7 +34,13 @@ function App() {
       setError(err.message);
     }
     setIsLoading(false); //if successful or err, no longer loading
-  }
+  }, []);
+
+  // fetchMovieHandler has side-effects (http requests) as it is from outside of react
+  // sideeffects without useEffect can cause infinite render loop, as setState would re-render the page every time
+  useEffect(() => {
+    fetchMovieHandler();
+  }, [fetchMovieHandler]);
 
   let content = <p>Found no movies.</p>;
   // must have states in the if statements to ensure that the statement would re-run
